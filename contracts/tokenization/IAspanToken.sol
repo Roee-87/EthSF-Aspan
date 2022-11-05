@@ -19,9 +19,9 @@ interface IAspanToken is IERC20 {
   event BalanceTransfer(address indexed from, address indexed to, uint256 value);
 
   /**
-   * @notice Mints `amount` aTokens to `user`
+   * @notice Mints `amount` AspanTokens to `user`
    * @param caller The address performing the mint
-   * @param onBehalfOf The address of the user that will receive the minted aTokens
+   * @param onBehalfOf The address of the user that will receive the minted AspanTokens
    * @param amount The amount of tokens getting minted
    * @return `true` if the the previous balance of the user was 0
    */
@@ -32,10 +32,10 @@ interface IAspanToken is IERC20 {
   ) external returns (bool);
 
   /**
-   * @notice Burns aTokens from `user` and sends the equivalent amount of underlying to `receiverOfUnderlying`
+   * @notice Burns AspanTokens from `user` and sends the equivalent amount of underlying to `receiverOfUnderlying`
    * @dev In some instances, the mint event could be emitted from a burn transaction
    * if the amount to burn is less than the interest that the user accrued
-   * @param from The address from which the aTokens will be burned
+   * @param from The address from which the AspanTokens will be burned
    * @param receiverOfUnderlying The address that will receive the underlying
    * @param amount The amount being burned
    **/
@@ -46,14 +46,14 @@ interface IAspanToken is IERC20 {
   ) external;
 
   /**
-   * @notice Mints aTokens to the reserve treasury
+   * @notice Mints AspanTokens to the reserve treasury
    * @param amount The amount of tokens getting minted
    */
   function mintToTreasury(uint256 amount) external;
 
   /**
-   * @notice Transfers aTokens in the event of a borrow being liquidated, in case the liquidators reclaims the aToken
-   * @param from The address getting liquidated, current owner of the aTokens
+   * @notice Transfers AspanTokens in the event of a borrow being liquidated, in case the liquidators reclaims the AspanToken
+   * @param from The address getting liquidated, current owner of the AspanTokens
    * @param to The recipient
    * @param value The amount of tokens getting transferred
    **/
@@ -72,9 +72,9 @@ interface IAspanToken is IERC20 {
   function transferUnderlyingTo(address user, uint256 amount) external;
 
   /**
-   * @notice Handles the underlying received by the aToken after the transfer has been completed.
+   * @notice Handles the underlying received by the AspanToken after the transfer has been completed.
    * @dev The default implementation is empty as with standard ERC20 tokens, nothing needs to be done after the
-   * transfer is concluded. However in the future there may be aTokens that allow for example to stake the underlying
+   * transfer is concluded. However in the future there may be AspanTokens that allow for example to stake the underlying
    * to receive LM rewards. In that case, `handleRepayment()` would perform the staking of the underlying asset.
    * @param user The user executing the repayment
    * @param amount The amount getting repaid
@@ -82,35 +82,13 @@ interface IAspanToken is IERC20 {
   function handleRepayment(address user, uint256 amount) external;
 
   /**
-   * @notice Allow passing a signed message to approve spending
-   * @dev implements the permit function as for
-   * https://github.com/ethereum/EIPs/blob/8a34d644aacf0f9f8f00815307fd7dd5da07655f/EIPS/eip-2612.md
-   * @param owner The owner of the funds
-   * @param spender The spender
-   * @param value The amount
-   * @param deadline The deadline timestamp, type(uint256).max for max deadline
-   * @param v Signature param
-   * @param s Signature param
-   * @param r Signature param
-   */
-  function permit(
-    address owner,
-    address spender,
-    uint256 value,
-    uint256 deadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) external;
-
-  /**
-   * @notice Returns the address of the underlying asset of this aToken (E.g. WETH for aWETH)
+   * @notice Returns the address of the underlying asset of this AspanToken (E.g. WETH for aWETH)
    * @return The address of the underlying asset
    **/
   function UNDERLYING_ASSET_ADDRESS() external view returns (address);
 
   /**
-   * @notice Returns the address of the Aave treasury, receiving the fees on this aToken.
+   * @notice Returns the address of the Aave treasury, receiving the fees on this AspanToken.
    * @return Address of the Aave treasury
    **/
   function RESERVE_TREASURY_ADDRESS() external view returns (address);

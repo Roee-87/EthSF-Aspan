@@ -1,15 +1,12 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./IInitializableAspanToken.sol";
-import "./IAspanToken.sol";
 import {IERC20} from '../dependencies/openzeppelin/contracts/IERC20.sol';
 import {GPv2SafeERC20} from '../dependencies/gnosis/contracts/GPv2SafeERC20.sol';
 import {SafeCast} from '../dependencies/openzeppelin/contracts/SafeCast.sol';
 import {Errors} from '../libraries/helpers/Errors.sol';
 import {WadRayMath} from '../libraries/math/WadRayMath.sol';
-import {IPool} from '../../interfaces/IPool.sol';
+import {IPool} from './IPool.sol';
 import {AspanToken} from './IAspanToken.sol';
 import {IInitializableAspanToken} from './IInitializableAspanToken.sol';
 import {EIP712Base} from './base/EIP712Base.sol';
@@ -30,26 +27,26 @@ contract AspanToken is IAspanToken, IncentivizedERC20, EIP712Base {
 
     //number of decimals
     constructor(IPool pool)
-        InventivizedERC20(pool, 'ATOKEN_IMPL', 'ATOKEN_IMPL', 0) 
+        InventivizedERC20(pool, 'AspanToken_IMPL', 'AspanToken_IMPL', 0) 
         EIP712Base()
     {
     // Intentionally left blank
     }
 
-    /// @inheritdoc IInitializableAToken
+    /// @inheritdoc IInitializableAspanToken
     function initialize(
         IPool initializingPool,
         address treasury,
         address underlyingAsset,
-        uint8 aTokenDecimals,
-        string calldata aTokenName,
-        string calldata aTokenSymbol,
+        uint8 AspanTokenDecimals,
+        string calldata AspanTokenName,
+        string calldata AspanTokenSymbol,
         bytes calldata params
     ) external override initializer {
         require(initializingPool == POOL, Errors.POOL_ADDRESSES_DO_NOT_MATCH);
-        _setName(aTokenName);
-        _setSymbol(aTokenSymbol);
-        _setDecimals(aTokenDecimals);
+        _setName(AspanTokenName);
+        _setSymbol(AspanTokenSymbol);
+        _setDecimals(AspanTokenDecimals);
     
         _treasury = treasury;
         _underlyingAsset = underlyingAsset;
@@ -61,9 +58,9 @@ contract AspanToken is IAspanToken, IncentivizedERC20, EIP712Base {
         address(POOL),
         treasury,
         address(incentivesController),
-        aTokenDecimals,
-        aTokenName,
-        aTokenSymbol,
+        AspanTokenDecimals,
+        AspanTokenName,
+        AspanTokenSymbol,
         params
         );
     }
@@ -181,7 +178,7 @@ contract AspanToken is IAspanToken, IncentivizedERC20, EIP712Base {
     }
 
     /**
-    * @notice Transfers the aTokens between two users. Validates the transfer
+    * @notice Transfers the AspanTokens between two users. Validates the transfer
     * (ie checks for valid HF after the transfer) if required
     * @param from The source address
     * @param to The destination address
