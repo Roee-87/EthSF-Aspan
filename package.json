@@ -1,0 +1,23 @@
+{
+  "name": "ethsf-aspan",
+  "version": "1.0.0",
+  "description": "EthSF-Aspan",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Roee-87/EthSF-Aspan.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Roee-87/EthSF-Aspan/issues"
+  },
+  "homepage": "https://github.com/Roee-87/EthSF-Aspan#readme",
+  "devDependencies": {
+    "hardhat": "^2.12.2"
+  }
+}
