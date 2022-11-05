@@ -1,1 +1,9 @@
 EthSF-Aspan
+
+polygon mumbai usdc: 0x9aa7fEc87CA69695Dd1f879567CcF49F3ba417E2
+polygon mumbai dai: 0x9A753f0F7886C9fbF63cF59D0D4423C5eFaCE95B
+polygon mumbai usdt: 0x21C561e551638401b937b03fE5a0a0652B99B7DD
+
+polygon mumba aToken usdc: 0xCdc2854e97798AfDC74BC420BD5060e022D14607
+polygon mumbai aToken Dai: 0xDD4f3Ee61466C4158D394d57f3D4C397E91fBc51
+polygon mumba aToken usdt: 0x6Ca4abE253bd510fCA862b5aBc51211C1E1E8925
