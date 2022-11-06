@@ -19,17 +19,41 @@ interface IAspanToken is IERC20 {
   event BalanceTransfer(address indexed from, address indexed to, uint256 value);
 
   /**
+   * @dev Emitted after the mint action
+   * @param caller The address performing the mint
+   * @param onBehalfOf The address of the user that will receive the minted scaled balance tokens
+   * @param value The amount being minted (user entered amount + balance increase from interest)
+   **/
+  event Mint(
+    address indexed caller,
+    address indexed onBehalfOf,
+    uint256 value
+  );
+
+  /**
+   * @dev Emitted after scaled balance tokens are burned
+   * @param from The address from which the scaled tokens will be burned
+   * @param target The address that will receive the underlying, if any
+   * @param value The amount being burned (user entered amount - balance increase from interest)
+   * @param balanceIncrease The increase in balance since the last action of the user
+   **/
+  event Burn(
+    address indexed from,
+    address indexed target,
+    uint256 value
+  );
+
+  /**
    * @notice Mints `amount` AspanTokens to `user`
    * @param caller The address performing the mint
    * @param onBehalfOf The address of the user that will receive the minted AspanTokens
    * @param amount The amount of tokens getting minted
-   * @return `true` if the the previous balance of the user was 0
    */
   function mint(
     address caller,
     address onBehalfOf,
     uint256 amount
-  ) external returns (bool);
+  ) external;
 
   /**
    * @notice Burns AspanTokens from `user` and sends the equivalent amount of underlying to `receiverOfUnderlying`
