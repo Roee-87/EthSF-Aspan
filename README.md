@@ -1,1 +1,16 @@
 EthSF-Aspan
+
+Token contracts for Polygon:
+
+polygon USDC: 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+
+polygon Dai: 0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063
+
+polygon usdt: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F
+
+
+polygon aToken usdc: 0x625E7708f30cA75bfd92586e17077590C60eb4cD
+
+polygon aToken Dai: 0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE
+
+polygon aToken usdt: 0x6ab707Aca953eDAeFBc4fD23bA73294241490620
