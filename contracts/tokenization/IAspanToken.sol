@@ -21,7 +21,7 @@ interface IAspanToken is IERC20, IInitializableAspanToken {
   /**
    * @dev Emitted after the mint action
    * @param caller The address performing the mint
-   * @param onBehalfOf The address of the user that will receive the minted scaled balance tokens
+   * @param onBehalfOf The address of the user that will receive the minted tokens
    * @param value The amount being minted (user entered amount + balance increase from interest)
    **/
   event Mint(
@@ -87,14 +87,6 @@ interface IAspanToken is IERC20, IInitializableAspanToken {
   ) external;
 
   /**
-   * @notice Transfers the underlying asset to `target`.
-   * @dev Used by the vault to transfer assets in borrow(), withdraw() and flashLoan()
-   * @param user The recipient of the underlying
-   * @param amount The amount getting transferred
-   **/
-  function transferUnderlyingTo(address user, uint256 amount) external;
-
-  /**
    * @notice Handles the underlying received by the AspanToken after the transfer has been completed.
    * @dev The default implementation is empty as with standard ERC20 tokens, nothing needs to be done after the
    * transfer is concluded. However in the future there may be AspanTokens that allow for example to stake the underlying
@@ -103,12 +95,6 @@ interface IAspanToken is IERC20, IInitializableAspanToken {
    * @param amount The amount getting repaid
    **/
   function handleRepayment(address user, uint256 amount) external;
-
-  /**
-   * @notice Returns the address of the underlying asset of this AspanToken (E.g. WETH for aWETH)
-   * @return The address of the underlying asset
-   **/
-  function UNDERLYING_ASSET_ADDRESS() external view returns (address);
 
   /**
    * @notice Returns the address of the Aave treasury, receiving the fees on this AspanToken.

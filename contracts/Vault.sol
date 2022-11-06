@@ -33,13 +33,9 @@ contract Vault {
     address private constant aaveATokenUsdtAddress =
         0x6ab707Aca953eDAeFBc4fD23bA73294241490620;
 
-    //@dev List of all the token contracts we will use in this strategy
-    IERC20 private _usdcToken;
-    IERC20 private _daiToken;
-    IERC20 private _usdtToken;
-    IERC20 private _aaveATokenUsdc;
-    IERC20 private _aaveATokenDai;
-    IERC20 private _aaveATokenUsdt;
+    address private poolProviderAddress = 0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb; //polygon POS
+
+    address polygonProxyAddr = 0xDef1C0ded9bec7F1a1670819833240f027b25EfF; //mumbai 0x proxy address
 
     IAspanToken public ASPANTOKEN;
     IPriceOracle private _priceOracle;
@@ -52,13 +48,6 @@ contract Vault {
     ///@dev We instantiate all of the instances of all the token contracts used in Vault
     constructor() {
         _owner = msg.sender;
-        _usdcToken = IERC20(usdcTokenAddress);
-        _daiToken = IERC20(daiTokenAddress);
-        _usdtToken = IERC20(usdtTokenAddress);
-        _aaveATokenUsdc = IERC20(aaveATokenUsdcAddress);
-        _aaveATokenDai = IERC20(aaveATokenDaiAddress);
-        _aaveATokenUsdt = IERC20(aaveATokenUsdtAddress);
-
         //IStrategy currentStrategy = IStrategy(_stratAddress);
     }
 
@@ -69,46 +58,49 @@ contract Vault {
     ///@notice The contract accepts a minimum of 100 USDC.  No other type of deposit is allowed.
     ///@dev User must first approve the transfer of _amount.  6 decimals for USDC in Polygon
     ///user deposits _amount of USDC.
-    function depositUsdcIntoVault(uint256 _amount) external {
-        //require USDC balance > 10
-        address user = msg.sender;
-        uint256 allowance = usdcToken.allowance(user, address(this));
+    function deposit(uint256 _amount, bytes calldata dc2dtSwapCallData, bytes calldata dc2daiSwapCallData) external {
+        uint256 allowance = IERC20(usdcTokenAddress).allowance(user, address(this));
         //check balance on front end too
-        require(
-            usdcToken.balanceOf(user) > (10 * 10) ^ 6,
-            "Minimum deposit is $10"
-        );
         require(allowance >= _amount, "user needs to approve the deposit");
+        uint256 aspanPrice = IPriceOracle(_priceOracle).getPriceOf(address(this), ASPANTOKEN, [aaveATokenDaiAddress, aaveATokenUsdcAddress, aaveATokenUsdtAddress]);
+        IERC20(usdcTokenAddress).transferFrom(msg.sender, address(this), _amount); //if the checks pass, transfer proceeds
+        fillQuote(_amount/3, usdcTokenAddress, usdtTokenAddress, dc2dtSwapCallData);
+        fillQuote(_amount/3, usdcTokenAddress, daiTokenAddress, dc2daiSwapCallData);
 
-        usdcToken.transferFrom(user, address(this), _amount); //if the checks pass, transfer proceeds
-
-        uint256 swappedDai = swapUsdcToDai(_amount / 3);
-        uint256 swappedUsdt = swapUsdcToUsdt(_amount / 3);
-
-        supplyUsdcToAave(_amount / 3);
-        supplyDaiToAave(swappedDai);
-        supplyUsdtToAave(swappedUsdt);
-
-        //mint AsPan Token to the user:  USDC / oracle price
-
-        // uint256 totalValue = aspanToken.balance(user) * oracle price
-
-        emit UserDepositedFunds(user, aspanToken.balance(user), _amount); //amount deposited, AspanToken minted)
+        supplyToAave(_amount/3, usdcTokenAddress);
+        supplyToAave(_amount/3, usdtTokenAddress);
+        supplyToAave(_amount/3, daiTokenAddress);
+        IAspanToken(ASPANTOKEN).mint(address(this), msg.sender, _amount/aspanPrice);
+        
+        emit Deposit(user, IAspanToken(ASPANTOKEN).balanceOf(user), _amount); //amount deposited, AspanToken minted)
     }
 
-    function withdrawUSDCFromVault(uint256 aspanTokenAmount) external {
+    function withdraw(uint256 aspanTokenAmount) external {
         require(IERC20(ASPANTOKEN).balanceOf(msg.sender) > aspanTokenAmount);
         IAspanToken(ASPANTOKEN).burn(msg.sender, msg.sender, _aspanTokenAmount);
         uint256 aspanPrice = IPriceOracle(_priceOracle).getPriceOf(address(this), ASPANTOKEN, [aaveATokenDaiAddress, aaveATokenUsdcAddress, aaveATokenUsdtAddress]);
         uint256 usdcValue = aspanPrice * aspanTokenAmount;
         // /1e18
-        
-        
-        //mint AsPan Token to the user:  USDC / oracle price
+        withdrawFromAave(usdcValue/3, usdtTokenAddress);
+        withdrawFromAave(usdcValue/3, usdcTokenAddress);
+        withdrawFromAave(usdcValue/3, daiTokenAddress);
 
-        // uint256 totalValue = aspanToken.balance(user) * oracle price
+        emit Withdraw(user, aspanTokenAmount, _amount); //amount deposited, AspanToken minted)
+    }
 
-        emit UserDepositedFunds(user, aspanToken.balance(user), _amount); //amount deposited, AspanToken minted)
+    function getPoolAddress() public view returns (address) {
+        return IPoolAddressesProvider(poolProviderAddress).getPool();
+    }
+
+    function supplyToAave(uint256 _amount, address tokenAddr) public onlyOwner {
+        address poolAddr = getPoolAddress();
+        IPool(poolAddr).supply(tokenAddr, _amount, address(this), 0);
+    }
+
+    function withdrawFromAave(uint256 _amount, address tokenAddr) internal {
+        address poolAddr = getPoolAddress();
+        //function withdraw(address asset, uint256 amount, address to)
+        IPool(poolAddr).withdraw(tokenAddr, _amount, address(this)); 
     }
 
     function setAspanTokenAddress(IAspanToken newAspanToken) external onlyOwner{
@@ -117,5 +109,50 @@ contract Vault {
 
     function setPriceOracle(IAspanToken newPriceOracle) external onlyOwner{
         _priceOracle = newPriceOracle;
+    }
+
+    function rescueFund(address tokenAddress, address to) external onlyOwner{
+        IERC20(tokenAddress).transfer(to,IERC20(tokenAddress).balanceOf(address(this)));
+    }
+
+    //swap function
+    function fillQuote(
+        // amount to swap -- for approve function
+        uint256 amount,
+        // // The `sellTokenAddress` field from the API response.
+        IERC20 sellToken,
+        // // The `buyTokenAddress` field from the API response.
+        // IERC20 buyToken,
+        // // The `allowanceTarget` field from the API response.
+        //address spender,
+        // The `to` field from the API response.
+        address swapTarget,
+        // The `data` field from the API response.
+        bytes calldata swapCallData
+    )
+        internal
+    // Must attach ETH equal to the `value` field from the API response.
+    {
+        // require swapTarget == polygonProxyAddr
+        require(
+            swapTarget == polygonProxyAddr,
+            "proxy address isn't the same as swapTarget address! Dubug this"
+        );
+
+        // Give `spender` an infinite allowance to spend this contract's `sellToken`.
+        // Note that for some tokens (e.g., USDT, KNC), you must first reset any existing
+        // allowance to 0 before being able to update it.
+        //IERC20 daiCon = IERC20(0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1);
+        require(sellToken.approve(swapTarget, 0), "approve to 0 failed");
+        require(sellToken.approve(swapTarget, amount), "approve failed");
+
+        // Call the encoded swap function call on the contract at `swapTarget`,
+        // passing along any ETH attached to this function call to cover protocol fees.
+        (bool success, ) = swapTarget.call(swapCallData);
+        require(success, "SWAP_CALL_FAILED");
+        // Refund any unspent protocol fees to the sender.
+        //msg.sender.transfer(address(this).balance);
+
+        // ...
     }
 }

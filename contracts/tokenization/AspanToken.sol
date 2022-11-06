@@ -38,7 +38,6 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
     }
 
     address internal _treasury;
-    address internal _underlyingAsset;
     uint256 internal _aspanPrice; // in USDC
     //IPoolAddressesProvider internal immutable _addressesProvider;
     IVault public immutable VAULT;
@@ -62,7 +61,6 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
     function initialize(
         IVault initializingVault,
         address treasury,
-        address underlyingAsset,
         uint8 AspanTokenDecimals,
         string calldata AspanTokenName,
         string calldata AspanTokenSymbol,
@@ -74,12 +72,10 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         _setDecimals(AspanTokenDecimals);
     
         _treasury = treasury;
-        _underlyingAsset = underlyingAsset;
     
         _domainSeparator = _calculateDomainSeparator();
 
         emit Initialized(
-        underlyingAsset,
         address(VAULT),
         treasury,
         AspanTokenDecimals,
@@ -117,9 +113,6 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         uint256 amount
     ) external override onlyVault {
         _burnAspan(from, receiverOfUnderlying, amount);
-        if (receiverOfUnderlying != address(this)) {
-        IERC20(_underlyingAsset).safeTransfer(receiverOfUnderlying, amount * _aspanPrice);
-        }
     }
 
     function _burnAspan(
@@ -152,16 +145,6 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
     /// @inheritdoc IAspanToken
     function RESERVE_TREASURY_ADDRESS() external view override returns (address) {
         return _treasury;
-    }
-
-    /// @inheritdoc IAspanToken
-    function UNDERLYING_ASSET_ADDRESS() external view override returns (address) {
-        return _underlyingAsset;
-    }
-
-    /// @inheritdoc IAspanToken
-    function transferUnderlyingTo(address target, uint256 amount) external virtual override onlyVault {
-        IERC20(_underlyingAsset).safeTransfer(target, amount);
     }
 
     /// @inheritdoc IAspanToken
@@ -209,7 +192,6 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         address to,
         uint256 amount
     ) external override onlyVaultAdmin {
-        require(token != _underlyingAsset, Errors.UNDERLYING_CANNOT_BE_RESCUED);
-        IERC20(token).safeTransfer(to, amount);
+        //intentially left blank
     }
 }

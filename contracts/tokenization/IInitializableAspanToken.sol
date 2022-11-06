@@ -11,7 +11,6 @@ import {IVault} from './IVault.sol';
 interface IInitializableAspanToken {
   /**
    * @dev Emitted when an AspanToken is initialized
-   * @param underlyingAsset The address of the underlying asset
    * @param vault The address of the associated vault
    * @param treasury The address of the treasury
    * @param AspanTokenDecimals The decimals of the underlying
@@ -20,7 +19,6 @@ interface IInitializableAspanToken {
    * @param params A set of encoded parameters for additional initialization
    **/
   event Initialized(
-    address indexed underlyingAsset,
     address indexed vault,
     address treasury,
     uint8 AspanTokenDecimals,
@@ -33,7 +31,6 @@ interface IInitializableAspanToken {
    * @notice Initializes the AspanToken
    * @param vault The vault contract that is initializing this contract
    * @param treasury The address of the Aave treasury, receiving the fees on this AspanToken
-   * @param underlyingAsset The address of the underlying asset of this AspanToken (E.g. WETH for aWETH)
    * @param AspanTokenDecimals The decimals of the AspanToken, same as the underlying asset's
    * @param AspanTokenName The name of the AspanToken
    * @param AspanTokenSymbol The symbol of the AspanToken
@@ -42,7 +39,6 @@ interface IInitializableAspanToken {
   function initialize(
     IVault vault,
     address treasury,
-    address underlyingAsset,
     uint8 AspanTokenDecimals,
     string calldata AspanTokenName,
     string calldata AspanTokenSymbol,
