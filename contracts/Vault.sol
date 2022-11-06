@@ -16,9 +16,8 @@ import {IPriceOracle} from "../contracts/oracle/IPriceOracle.sol";
 /// @notice the vault contracts accepts user funds and deploys Aspan's investing strategy
 /// @dev users can call three functions:  deposit(), withdraw(), checkMyBalance();
 contract Vault {
-        address private _owner;
-
-    Ipool pool;
+    address private _owner;
+    //IStrategy currentStrategy;
 
     //@dev List of token addresses and corresponding Aave ATokens that we use in this strategy
     address private constant usdcTokenAddress =
@@ -33,10 +32,6 @@ contract Vault {
         0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE;
     address private constant aaveATokenUsdtAddress =
         0x6ab707Aca953eDAeFBc4fD23bA73294241490620;
-    address private constant zeroExPolygonExchangeProxyAddress =
-        0xDef1C0ded9bec7F1a1670819833240f027b25EfF;
-    address private constant poolProviderAddress =
-        0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb;
 
     //@dev List of all the token contracts we will use in this strategy
     IERC20 private _usdcToken;
@@ -46,14 +41,13 @@ contract Vault {
     IERC20 private _aaveATokenDai;
     IERC20 private _aaveATokenUsdt;
 
+    IAspanToken public ASPANTOKEN;
+    IPriceOracle private _priceOracle;
+
     modifier onlyOwner() {
-        require(
-            msg.sender == _owner,
-            "Only the Owner can access this function"
-        );
+        require(msg.sender == owner, "Only the Owner can access this function");
         _;
     }
-    event NewDeposit(address indexed user, uint256 indexed amount);
 
     ///@dev We instantiate all of the instances of all the token contracts used in Vault
     constructor() {
@@ -72,43 +66,19 @@ contract Vault {
     //     currentStrategy = IStrategy(_strategy);
     // }
 
-    ///@notice The contract accepts a minimum of 10 USDC.  No other type of deposit is allowed.
+    ///@notice The contract accepts a minimum of 100 USDC.  No other type of deposit is allowed.
     ///@dev User must first approve the transfer of _amount.  6 decimals for USDC in Polygon
     ///user deposits _amount of USDC.
-    function depositUsdcIntoVault(
-        uint256 _amount, //this is an amount of USDC
-        bytes calldata daiData, //generated off chain prior to function call
-        bytes calldata usdtData //generated off chain prior to function call
-    ) external {
+    function depositUsdcIntoVault(uint256 _amount) external {
+        //require USDC balance > 10
         address user = msg.sender;
-        uint256 allowance = _usdcToken.allowance(user, address(this)); //prior approval by user necessary
+        uint256 allowance = usdcToken.allowance(user, address(this));
         //check balance on front end too
-
+        require(
+            usdcToken.balanceOf(user) > (10 * 10) ^ 6,
+            "Minimum deposit is $10"
+        );
         require(allowance >= _amount, "user needs to approve the deposit");
-
-        _usdcToken.transferFrom(user, address(this), _amount); //if the checks pass, transfer proceeds
-        //swap 1/3 of _amount to Dai
-        swap0x(_amount / 3, daiData);
-        //swap 1/3 of _amount to USDT
-        swap0x(_amount / 3, usdtData);
-
-        uint256 amountUsdc = _usdcToken.balanceOf(address(this));
-        uint256 amountDai = _daiToken.balanceOf(address(this));
-        uint256 amountUsdt = _usdtToken.balanceOf(address(this));
-
-        deployFundsToAave(amountUsdc, usdcTokenAddress);
-        deployFundsToAave(amountDai, daiTokenAddress);
-        deployFundsToAave(amountUsdt, usdtTokenAddress);
-
-        emit NewDeposit(user, _amount);
-    }
-
-    function withdrawUSDCFromVault(uint256 aspanTokenAmount) external {
-        require(IERC20(ASPANTOKEN).balanceOf(msg.sender) > aspanTokenAmount);
-        IAspanToken(ASPANTOKEN).burn(msg.sender, msg.sender, _aspanTokenAmount);
-        uint256 aspanPrice = IPriceOracle(_priceOracle).getPriceOf(address(this), ASPANTOKEN, [aaveATokenDaiAddress, aaveATokenUsdcAddress]);
-        
-        
 
         usdcToken.transferFrom(user, address(this), _amount); //if the checks pass, transfer proceeds
 
@@ -119,6 +89,21 @@ contract Vault {
         supplyDaiToAave(swappedDai);
         supplyUsdtToAave(swappedUsdt);
 
+        //mint AsPan Token to the user:  USDC / oracle price
+
+        // uint256 totalValue = aspanToken.balance(user) * oracle price
+
+        emit UserDepositedFunds(user, aspanToken.balance(user), _amount); //amount deposited, AspanToken minted)
+    }
+
+    function withdrawUSDCFromVault(uint256 aspanTokenAmount) external {
+        require(IERC20(ASPANTOKEN).balanceOf(msg.sender) > aspanTokenAmount);
+        IAspanToken(ASPANTOKEN).burn(msg.sender, msg.sender, _aspanTokenAmount);
+        uint256 aspanPrice = IPriceOracle(_priceOracle).getPriceOf(address(this), ASPANTOKEN, [aaveATokenDaiAddress, aaveATokenUsdcAddress, aaveATokenUsdtAddress]);
+        uint256 usdcValue = aspanPrice * aspanTokenAmount;
+        // /1e18
+        
+        
         //mint AsPan Token to the user:  USDC / oracle price
 
         // uint256 totalValue = aspanToken.balance(user) * oracle price
