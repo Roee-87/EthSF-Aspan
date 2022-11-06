@@ -7,3 +7,5 @@ Whereas a majority of today's dapps attempt to improve usability for the same ol
 The Graph:  We are using The Graph to index our userbase and ensure our committment to transparent cashflows. 
 
 Aspan Token: Aspan Token acts as the deposit receipt for users to reclaim assets and interests. It is controlled by the Vault to mint new tokens and burn tokens to redeem assets. 
+
+Vault: Vault smart contracts controls the deposit and withdraw logic, including the aave, 0x, and Aspan Token reclaim processes
