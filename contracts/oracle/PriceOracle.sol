@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -18,7 +18,11 @@ contract PriceOracle is IPriceOracle, Ownable {
         setAggregatorAddress(usdcAddress, usdcAggregatorAddress);
     }
 
-    function _toWei(uint256 number, uint256 decimals) internal pure returns (uint256) {
+    function _toWei(uint256 number, uint256 decimals)
+        internal
+        pure
+        returns (uint256)
+    {
         uint256 power = 18 - decimals;
         return number * (10**power);
     }
@@ -27,8 +31,9 @@ contract PriceOracle is IPriceOracle, Ownable {
         return
             (value *
                 ((1e18 * DIVISION_GUARD) /
-                    getPriceFromAggregator(s_USDAggregatorAddresses[s_USDCaddress]))) /
-            DIVISION_GUARD;
+                    getPriceFromAggregator(
+                        s_USDAggregatorAddresses[s_USDCaddress]
+                    ))) / DIVISION_GUARD;
     }
 
     function _getUnderlyingBalanceOf(address owner, address aTokenAddress)
@@ -40,13 +45,23 @@ contract PriceOracle is IPriceOracle, Ownable {
         return underlyingToken.balanceOf(owner);
     }
 
-    function _getUnderlyingAddressOf(address aTokenAddress) internal view returns (address) {
+    function _getUnderlyingAddressOf(address aTokenAddress)
+        internal
+        view
+        returns (address)
+    {
         IAToken aToken = IAToken(aTokenAddress);
         return aToken.UNDERLYING_ASSET_ADDRESS();
     }
 
-    function getPriceFromAggregator(address priceFeedAddress) public view returns (uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(priceFeedAddress);
+    function getPriceFromAggregator(address priceFeedAddress)
+        public
+        view
+        returns (uint256)
+    {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            priceFeedAddress
+        );
         (, int256 price, , , ) = priceFeed.latestRoundData();
 
         return _toWei(uint256(price), priceFeed.decimals());
@@ -56,18 +71,17 @@ contract PriceOracle is IPriceOracle, Ownable {
         s_USDCaddress = usdcAddress;
     }
 
-    function setAggregatorAddress(address erc20Address, address aggregatorAddress)
-        public
-        onlyOwner
-    {
+    function setAggregatorAddress(
+        address erc20Address,
+        address aggregatorAddress
+    ) public onlyOwner {
         s_USDAggregatorAddresses[erc20Address] = aggregatorAddress;
     }
 
-    function getUSDValueOf(address valueHolder, address[] calldata aTokenAddresses)
-        public
-        view
-        returns (uint256 usdValue)
-    {
+    function getUSDValueOf(
+        address valueHolder,
+        address[] calldata aTokenAddresses
+    ) public view returns (uint256 usdValue) {
         for (uint256 i = 0; i < aTokenAddresses.length; i++) {
             address aTokenAddress = aTokenAddresses[i];
             IdERC20 aToken = IdERC20(aTokenAddress);
@@ -77,7 +91,9 @@ contract PriceOracle is IPriceOracle, Ownable {
                 s_USDAggregatorAddresses[_getUnderlyingAddressOf(aTokenAddress)]
             );
 
-            usdValue += (_toWei(aBalanceOfVault, aToken.decimals()) * pricePerToken) / 1e18;
+            usdValue +=
+                (_toWei(aBalanceOfVault, aToken.decimals()) * pricePerToken) /
+                1e18;
         }
     }
 
@@ -97,7 +113,7 @@ contract PriceOracle is IPriceOracle, Ownable {
         address[] calldata aTokenAddresses
     ) external view override returns (uint256) {
         return
-            ((_usdToUSDC(getUSDValueOf(vaultAddress, aTokenAddresses))) * DIVISION_GUARD) /
-            IERC20(tokenAddress).totalSupply();
+            ((_usdToUSDC(getUSDValueOf(vaultAddress, aTokenAddresses))) *
+                DIVISION_GUARD) / IERC20(tokenAddress).totalSupply();
     }
 }
