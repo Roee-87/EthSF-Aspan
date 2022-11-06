@@ -4,6 +4,8 @@ pragma solidity ^0.8.10;
 import {IPool} from "../dependencies/IPool.sol";
 import {IPoolAddressesProvider} from "../dependencies/IPoolAddressesProvider.sol";
 import {IERC20} from "../dependencies/IERC20.sol";
+import {IAspanToken} from "EthSF-Aspan/contracts/tokenization/IAspanToken.sol";
+import {IPriceOracle} from "EthSF-Aspan/contracts/oracle/IPriceOracle.sol";
 
 //import {IOracle}
 //import {IAspanToken}
@@ -38,6 +40,9 @@ contract Vault {
     IERC20 private _aaveATokenUsdc;
     IERC20 private _aaveATokenDai;
     IERC20 private _aaveATokenUsdt;
+
+    IAspanToken public ASPANTOKEN;
+    IPriceOracle private _priceOracle;
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the Owner can access this function");
@@ -91,5 +96,34 @@ contract Vault {
         emit UserDepositedFunds(user, aspanToken.balance(user), _amount); //amount deposited, AspanToken minted)
     }
 
-    function withdraw
+    function withdrawUSDCFromVault(uint256 aspanTokenAmount) external {
+        address user = msg.sender;
+        require(IERC20(ASPANTOKEN).balanceOf(msg.sender) > aspanTokenAmount);
+        IAspanToken(ASPANTOKEN).burn(msg.sender, msg.sender, _aspanTokenAmount);
+        
+        
+
+        usdcToken.transferFrom(user, address(this), _amount); //if the checks pass, transfer proceeds
+
+        uint256 swappedDai = swapUsdcToDai(_amount / 3);
+        uint256 swappedUsdt = swapUsdcToUsdt(_amount / 3);
+
+        supplyUsdcToAave(_amount / 3);
+        supplyDaiToAave(swappedDai);
+        supplyUsdtToAave(swappedUsdt);
+
+        //mint AsPan Token to the user:  USDC / oracle price
+
+        // uint256 totalValue = aspanToken.balance(user) * oracle price
+
+        emit UserDepositedFunds(user, aspanToken.balance(user), _amount); //amount deposited, AspanToken minted)
+    }
+
+    function setAspanTokenAddress(IAspanToken newAspanToken) external onlyOwner{
+        ASPANTOKEN = newAspanToken;
+    }
+
+    function setPriceOracle(IAspanToken newPriceOracle) external onlyOwner{
+        _priceOracle = newPriceOracle;
+    }
 }
