@@ -4,9 +4,9 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import "./interfaces/IAToken.sol";
-import "./interfaces/IdERC20.sol";
-import "./interfaces/IPriceOracle.sol";
+import "./IAToken.sol";
+import "./IdERC20.sol";
+import "./IPriceOracle.sol";
 
 contract PriceOracle is IPriceOracle, Ownable {
     mapping(address => address) private s_USDAggregatorAddresses;
@@ -63,7 +63,7 @@ contract PriceOracle is IPriceOracle, Ownable {
         s_USDAggregatorAddresses[erc20Address] = aggregatorAddress;
     }
 
-    function getUSDValueOf(address valueHolder, address[] calldata aTokenAddresses)
+    function getUSDValueOf(address valueHolder, address[3] calldata aTokenAddresses)
         public
         view
         returns (uint256 usdValue)
@@ -84,7 +84,7 @@ contract PriceOracle is IPriceOracle, Ownable {
     function getUSDPriceOf(
         address vaultAddress,
         address tokenAddress,
-        address[] calldata aTokenAddresses
+        address[3] calldata aTokenAddresses
     ) external view override returns (uint256) {
         return
             (getUSDValueOf(vaultAddress, aTokenAddresses) * DIVISION_GUARD) /
@@ -94,7 +94,7 @@ contract PriceOracle is IPriceOracle, Ownable {
     function getUSDCPriceOf(
         address vaultAddress,
         address tokenAddress,
-        address[] calldata aTokenAddresses
+        address[3] calldata aTokenAddresses
     ) external view override returns (uint256) {
         return
             ((_usdToUSDC(getUSDValueOf(vaultAddress, aTokenAddresses))) * DIVISION_GUARD) /
