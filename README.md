@@ -8,4 +8,6 @@ The Graph:  We are using The Graph to index our userbase and ensure our committm
 
 Aspan Token: Aspan Token acts as the deposit receipt for users to reclaim assets and interests. It is controlled by the Vault to mint new tokens and burn tokens to redeem assets. 
 
+Price Oracle (Chainlink): The repo uses Chainlink to facilitate price feeds for aave stablecoin pools and its corresponding udnerlying asset to price our custom Aspan Token.
+
 Vault: Vault smart contracts controls the deposit and withdraw logic, including the aave, 0x, and Aspan Token reclaim processes
