@@ -82,8 +82,8 @@ contract Vault is IVault {
         require(IERC20(ASPANTOKEN).balanceOf(msg.sender) > aspanTokenAmount);
         IAspanToken(ASPANTOKEN).burn(msg.sender, msg.sender, aspanTokenAmount);
         uint256 aspanPrice = IPriceOracle(_priceOracle).getUSDCPriceOf(address(this), address(ASPANTOKEN), [aaveATokenDaiAddress, aaveATokenUsdcAddress, aaveATokenUsdtAddress]);
-        uint256 usdcValue = aspanPrice * aspanTokenAmount;
-        // /1e18
+        uint256 usdcValue = aspanPrice * aspanTokenAmount / 1e18;
+        
         withdrawFromAave(usdcValue/3, usdtTokenAddress);
         withdrawFromAave(usdcValue/3, usdcTokenAddress);
         withdrawFromAave(usdcValue/3, daiTokenAddress);
@@ -99,7 +99,7 @@ contract Vault is IVault {
         return IPoolAddressesProvider(poolProviderAddress).getPool();
     }
 
-    function supplyToAave(uint256 _amount, address tokenAddr) public onlyOwner {
+    function supplyToAave(uint256 _amount, address tokenAddr) internal {
         address poolAddr = getPoolAddress();
         IPool(poolAddr).supply(tokenAddr, _amount, address(this), 0);
     }
