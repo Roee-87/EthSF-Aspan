@@ -1,11 +1,11 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import {IPool} from "../dependencies/IPool.sol";
-import {IPoolAddressesProvider} from "../dependencies/IPoolAddressesProvider.sol";
-import {IERC20} from "../dependencies/IERC20.sol";
-import {IAspanToken} from "EthSF-Aspan/contracts/tokenization/IAspanToken.sol";
-import {IPriceOracle} from "EthSF-Aspan/contracts/oracle/IPriceOracle.sol";
+import {IPool} from "../contracts/dependencies/openzeppelin/contracts/IPool.sol";
+import {IPoolAddressesProvider} from "../contracts/dependencies/openzeppelin/contracts/IPoolAddressesProvider.sol";
+import {IERC20} from "../contracts/dependencies/openzeppelin/contracts/IERC20.sol";
+import {IAspanToken} from "../contracts/tokenization/IAspanToken.sol";
+import {IPriceOracle} from "../contracts/oracle/IPriceOracle.sol";
 
 //import {IOracle}
 //import {IAspanToken}
@@ -97,9 +97,9 @@ contract Vault {
     }
 
     function withdrawUSDCFromVault(uint256 aspanTokenAmount) external {
-        address user = msg.sender;
         require(IERC20(ASPANTOKEN).balanceOf(msg.sender) > aspanTokenAmount);
         IAspanToken(ASPANTOKEN).burn(msg.sender, msg.sender, _aspanTokenAmount);
+        uint256 aspanPrice = IPriceOracle(_priceOracle).getPriceOf(address(this), ASPANTOKEN, [aaveATokenDaiAddress, aaveATokenUsdcAddress]);
         
         
 
