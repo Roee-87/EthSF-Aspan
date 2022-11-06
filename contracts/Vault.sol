@@ -69,9 +69,9 @@ contract Vault is IVault {
         fillQuote(_amount/3, IERC20(usdcTokenAddress), usdtTokenAddress, dc2dtSwapCallData);
         fillQuote(_amount/3, IERC20(usdcTokenAddress), daiTokenAddress, dc2daiSwapCallData);
 
-        supplyToAave(_amount/3, usdcTokenAddress);
-        supplyToAave(_amount/3, usdtTokenAddress);
-        supplyToAave(_amount/3, daiTokenAddress);
+        supplyToAave(_amount/3 * 995 / 1000, usdcTokenAddress);
+        supplyToAave(_amount/3 * 995 / 1000, usdtTokenAddress);
+        supplyToAave(_amount/3 * 995 / 1000, daiTokenAddress);
 
         IAspanToken(ASPANTOKEN).mint(address(this), msg.sender, _amount/aspanPrice);
         
@@ -87,11 +87,11 @@ contract Vault is IVault {
         withdrawFromAave(usdcValue/3, usdtTokenAddress);
         withdrawFromAave(usdcValue/3, usdcTokenAddress);
         withdrawFromAave(usdcValue/3, daiTokenAddress);
-        
+
         fillQuote(usdcValue/3, IERC20(usdtTokenAddress), usdcTokenAddress, dt2dcSwapCallData);
         fillQuote(usdcValue/3, IERC20(daiTokenAddress), usdcTokenAddress, dai2dcSwapCallData);
 
-        IERC20(usdcTokenAddress).transfer(msg.sender, usdcValue);
+        IERC20(usdcTokenAddress).transfer(msg.sender, usdcValue * 995 / 1000); //taking a 0.5% cut also avoiding slippage
         emit Withdraw(msg.sender, aspanTokenAmount, usdcValue);
     }
 
