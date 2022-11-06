@@ -1,0 +1,24 @@
+type Deposit @entity {
+  id: ID!
+  userAddress: Bytes!
+  usdcProvided: BigInt!
+  tokensMinted: BigInt!
+  timestamp: BigInt!
+}
+
+type Withdrawal @entity {
+  id: ID!
+  userAddress: Bytes!
+  usdcWithdrawn: BigInt!
+  tokensBurnt: BigInt!
+  timestamp: BigInt!
+}
+
+type Position @entity {
+  id: Bytes! #ID
+  userAddress: Bytes!
+  usdcProvided: BigInt!
+  usdcWithdrawn: BigInt!
+  aspanBalance: BigInt!
+  active: Boolean!
+}
