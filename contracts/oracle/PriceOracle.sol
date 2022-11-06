@@ -13,9 +13,18 @@ contract PriceOracle is IPriceOracle, Ownable {
     address private s_USDCaddress;
     uint256 private constant DIVISION_GUARD = 1e18;
 
-    constructor(address usdcAddress, address usdcAggregatorAddress) {
+    constructor(
+        address usdcAddress,
+        address usdcAggregatorAddress,
+        address usdtAddress,
+        address usdtAggregatorAddress,
+        address daiAddress,
+        address daiAggregatorAddress
+    ) {
         setUSDCaddress(usdcAddress);
         setAggregatorAddress(usdcAddress, usdcAggregatorAddress);
+        setAggregatorAddress(usdtAddress, usdtAggregatorAddress);
+        setAggregatorAddress(daiAddress, daiAggregatorAddress);
     }
 
     function _toWei(uint256 number, uint256 decimals)
@@ -78,12 +87,10 @@ contract PriceOracle is IPriceOracle, Ownable {
         s_USDAggregatorAddresses[erc20Address] = aggregatorAddress;
     }
 
-
-    function getUSDValueOf(address valueHolder, address[3] calldata aTokenAddresses)
-        public
-        view
-        returns (uint256 usdValue)
-    {
+    function getUSDValueOf(
+        address valueHolder,
+        address[3] calldata aTokenAddresses
+    ) public view returns (uint256 usdValue) {
         for (uint256 i = 0; i < aTokenAddresses.length; i++) {
             address aTokenAddress = aTokenAddresses[i];
             IdERC20 aToken = IdERC20(aTokenAddress);
