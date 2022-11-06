@@ -88,7 +88,7 @@ interface IAspanToken is IERC20, IInitializableAspanToken {
 
   /**
    * @notice Transfers the underlying asset to `target`.
-   * @dev Used by the Pool to transfer assets in borrow(), withdraw() and flashLoan()
+   * @dev Used by the vault to transfer assets in borrow(), withdraw() and flashLoan()
    * @param user The recipient of the underlying
    * @param amount The amount getting transferred
    **/

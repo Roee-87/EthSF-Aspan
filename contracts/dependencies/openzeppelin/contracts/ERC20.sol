@@ -54,9 +54,9 @@ contract ERC20 is Context, IERC20 {
    * All three of these values are immutable: they can only be set once during
    * construction.
    */
-  constructor(string memory name, string memory symbol) {
-    _name = name;
-    _symbol = symbol;
+  constructor(string memory tokenName, string memory tokenSymbol) {
+    _name = tokenName;
+    _symbol = tokenSymbol;
     _decimals = 18;
   }
 
@@ -115,8 +115,8 @@ contract ERC20 is Context, IERC20 {
    * - the caller must have a balance of at least `amount`.
    */
   function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-    _transfer(_msgSender(), recipient, amount);
-    return true;
+    _transfer(msg.sender, recipient, amount);
+    return false;
   }
 
   /**
@@ -162,12 +162,7 @@ contract ERC20 is Context, IERC20 {
     uint256 amount
   ) public virtual override returns (bool) {
     _transfer(sender, recipient, amount);
-    _approve(
-      sender,
-      _msgSender(),
-      _allowances[sender][_msgSender()].sub(amount, 'ERC20: transfer amount exceeds allowance')
-    );
-    return true;
+    return false;
   }
 
   /**

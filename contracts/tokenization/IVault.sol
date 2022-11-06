@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import {IPoolAddressesProvider} from './IPoolAddressesProvider.sol';
-
-interface IPool {
+interface IVault {
     event MintUnbacked(
     address indexed reserve,
     address user,
@@ -36,10 +34,4 @@ interface IPool {
     uint256 amount,
     uint16 indexed referralCode
   );
-
-  /**
-   * @notice Returns the PoolAddressesProvider connected to this contract
-   * @return The address of the PoolAddressesProvider
-   **/
-  function ADDRESSES_PROVIDER() external view returns (IPoolAddressesProvider);
 }

@@ -6,7 +6,7 @@ import {GPv2SafeERC20} from '../dependencies/gnosis/contracts/GPv2SafeERC20.sol'
 import {SafeCast} from '../dependencies/openzeppelin/contracts/SafeCast.sol';
 import {Errors} from '../dependencies/helpers/Errors.sol';
 import {WadRayMath} from '../dependencies/math/WadRayMath.sol';
-import {IPool} from './IPool.sol';
+import {IVault} from './IVault.sol';
 import {IAspanToken} from './IAspanToken.sol';
 import {IInitializableAspanToken} from './IInitializableAspanToken.sol';
 import {EIP712Base} from '../dependencies/openzeppelin/contracts/EIP712Base.sol';
@@ -22,18 +22,18 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
     bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     /**
-    * @dev Only pool admin can call functions marked by this modifier.
+    * @dev Only vault admin can call functions marked by this modifier.
     **/
-    modifier onlyPoolAdmin() {
+    modifier onlyVaultAdmin() {
         //require(_msgSender() == address(), Errors.CALLER_MUST_BE_POOL);
         _;
     }
 
     /**
-    * @dev Only pool can call functions marked by this modifier.
+    * @dev Only vault can call functions marked by this modifier.
     **/
-    modifier onlyPool() {
-        require(_msgSender() == address(POOL), Errors.CALLER_MUST_BE_POOL);
+    modifier onlyVault() {
+        require(_msgSender() == address(VAULT), Errors.CALLER_MUST_BE_POOL);
         _;
     }
 
@@ -41,26 +41,26 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
     address internal _underlyingAsset;
     uint256 internal _aspanPrice; // in USDC
     //IPoolAddressesProvider internal immutable _addressesProvider;
-    IPool public immutable POOL;
+    IVault public immutable VAULT;
     
     
     //ITokenPriceOracle internal oracle;
 
     /**
     * @dev Constructor.
-    * @param pool The reference to the main Pool contract
+    * @param vault The reference to the main vault contract
     */
-    constructor(IPool pool)
+    constructor(IVault vault)
         ERC20('AspanToken_IMPL', 'AspanToken_IMPL') 
         EIP712Base()
     {
         //_addressesProvider = pool.ADDRESSES_PROVIDER();
-        POOL = pool;
+        VAULT = vault;
     }
 
     /// @inheritdoc IInitializableAspanToken
     function initialize(
-        IPool initializingPool,
+        IVault initializingVault,
         address treasury,
         address underlyingAsset,
         uint8 AspanTokenDecimals,
@@ -68,7 +68,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         string calldata AspanTokenSymbol,
         bytes calldata params
     ) external override {
-        require(initializingPool == POOL, Errors.POOL_ADDRESSES_DO_NOT_MATCH);
+        require(initializingVault == VAULT, Errors.POOL_ADDRESSES_DO_NOT_MATCH);
         _setName(AspanTokenName);
         _setSymbol(AspanTokenSymbol);
         _setDecimals(AspanTokenDecimals);
@@ -80,7 +80,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
 
         emit Initialized(
         underlyingAsset,
-        address(POOL),
+        address(VAULT),
         treasury,
         AspanTokenDecimals,
         AspanTokenName,
@@ -94,7 +94,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         address caller,
         address onBehalfOf,
         uint256 amount
-    ) external override onlyPool {
+    ) external override onlyVault {
         _mintAspan(caller, onBehalfOf, amount);
         return;
     }
@@ -115,7 +115,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         address from,
         address receiverOfUnderlying,
         uint256 amount
-    ) external override onlyPool {
+    ) external override onlyVault {
         _burnAspan(from, receiverOfUnderlying, amount);
         if (receiverOfUnderlying != address(this)) {
         IERC20(_underlyingAsset).safeTransfer(receiverOfUnderlying, amount * _aspanPrice);
@@ -133,11 +133,11 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
     }
 
     /// @inheritdoc IAspanToken
-    function mintToTreasury(uint256 amount) external override onlyPool {
+    function mintToTreasury(uint256 amount) external override onlyVault {
         if (amount == 0) {
             return;
         }
-        _mintAspan(address(POOL), _treasury, amount);
+        _mintAspan(address(VAULT), _treasury, amount);
     }
 
     /// @inheritdoc IAspanToken
@@ -145,11 +145,8 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         address from,
         address to,
         uint256 value
-    ) external override onlyPool {
-        // Being a normal transfer, the Transfer() and BalanceTransfer() are emitted
-        // so no need to emit a specific event here
-        _transfer(from, to, value);
-        
+    ) external override onlyVault {
+        //intentially left blank
     }
 
     /// @inheritdoc IAspanToken
@@ -163,12 +160,12 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
     }
 
     /// @inheritdoc IAspanToken
-    function transferUnderlyingTo(address target, uint256 amount) external virtual override onlyPool {
+    function transferUnderlyingTo(address target, uint256 amount) external virtual override onlyVault {
         IERC20(_underlyingAsset).safeTransfer(target, amount);
     }
 
     /// @inheritdoc IAspanToken
-    function handleRepayment(address user, uint256 amount) external virtual override onlyPool {
+    function handleRepayment(address user, uint256 amount) external virtual override onlyVault {
         // Intentionally left blank
     }
 
@@ -182,8 +179,8 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         address from,
         address to,
         uint256 amount
-    ) internal override {
-        revert();
+    ) internal pure override {
+        //intentially left blank
     }
 
     /**
@@ -211,7 +208,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         address token,
         address to,
         uint256 amount
-    ) external override onlyPoolAdmin {
+    ) external override onlyVaultAdmin {
         require(token != _underlyingAsset, Errors.UNDERLYING_CANNOT_BE_RESCUED);
         IERC20(token).safeTransfer(to, amount);
     }

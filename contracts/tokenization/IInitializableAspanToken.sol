@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import {IPool} from './IPool.sol';
+import {IVault} from './IVault.sol';
 
 /**
  * @title IInitializableAspanToken
@@ -12,7 +12,7 @@ interface IInitializableAspanToken {
   /**
    * @dev Emitted when an AspanToken is initialized
    * @param underlyingAsset The address of the underlying asset
-   * @param pool The address of the associated pool
+   * @param vault The address of the associated vault
    * @param treasury The address of the treasury
    * @param AspanTokenDecimals The decimals of the underlying
    * @param AspanTokenName The name of the AspanToken
@@ -21,7 +21,7 @@ interface IInitializableAspanToken {
    **/
   event Initialized(
     address indexed underlyingAsset,
-    address indexed pool,
+    address indexed vault,
     address treasury,
     uint8 AspanTokenDecimals,
     string AspanTokenName,
@@ -31,7 +31,7 @@ interface IInitializableAspanToken {
 
   /**
    * @notice Initializes the AspanToken
-   * @param pool The pool contract that is initializing this contract
+   * @param vault The vault contract that is initializing this contract
    * @param treasury The address of the Aave treasury, receiving the fees on this AspanToken
    * @param underlyingAsset The address of the underlying asset of this AspanToken (E.g. WETH for aWETH)
    * @param AspanTokenDecimals The decimals of the AspanToken, same as the underlying asset's
@@ -40,7 +40,7 @@ interface IInitializableAspanToken {
    * @param params A set of encoded parameters for additional initialization
    */
   function initialize(
-    IPool pool,
+    IVault vault,
     address treasury,
     address underlyingAsset,
     uint8 AspanTokenDecimals,
