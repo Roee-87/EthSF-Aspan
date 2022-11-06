@@ -20,7 +20,6 @@ contract Vault is IVault {
     address private _owner;
     //IStrategy currentStrategy;
 
-    
     //@dev List of token addresses and corresponding Aave ATokens that we use in this strategy
     address private constant usdcTokenAddress =
         0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
@@ -35,7 +34,8 @@ contract Vault is IVault {
     address private constant aaveATokenUsdtAddress =
         0x6ab707Aca953eDAeFBc4fD23bA73294241490620;
 
-    address private poolProviderAddress = 0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb; //polygon POS
+    address private poolProviderAddress =
+        0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb; //polygon POS
 
     address polygonProxyAddr = 0xDef1C0ded9bec7F1a1670819833240f027b25EfF; //mumbai 0x proxy address
 
@@ -43,7 +43,10 @@ contract Vault is IVault {
     IPriceOracle private _priceOracle;
 
     modifier onlyOwner() {
-        require(msg.sender == _owner, "Only the Owner can access this function");
+        require(
+            msg.sender == _owner,
+            "Only the Owner can access this function"
+        );
         _;
     }
 
@@ -60,38 +63,82 @@ contract Vault is IVault {
     ///@notice The contract accepts a minimum of 100 USDC.  No other type of deposit is allowed.
     ///@dev User must first approve the transfer of _amount.  6 decimals for USDC in Polygon
     ///user deposits _amount of USDC.
-    function deposit(uint256 _amount, bytes calldata dc2dtSwapCallData, bytes calldata dc2daiSwapCallData) external {
-        uint256 allowance = IERC20(usdcTokenAddress).allowance(msg.sender, address(this));
+    function deposit(
+        uint256 _amount,
+        bytes calldata dc2dtSwapCallData,
+        bytes calldata dc2daiSwapCallData
+    ) external {
+        uint256 allowance = IERC20(usdcTokenAddress).allowance(
+            msg.sender,
+            address(this)
+        );
         //check balance on front end too
         require(allowance >= _amount, "user needs to approve the deposit");
-        uint256 aspanPrice = IPriceOracle(_priceOracle).getUSDCPriceOf(address(this), address(ASPANTOKEN), [aaveATokenDaiAddress, aaveATokenUsdcAddress, aaveATokenUsdtAddress]);
-        IERC20(usdcTokenAddress).transferFrom(msg.sender, address(this), _amount); //if the checks pass, transfer proceeds
-        fillQuote(_amount/3, IERC20(usdcTokenAddress), usdtTokenAddress, dc2dtSwapCallData);
-        fillQuote(_amount/3, IERC20(usdcTokenAddress), daiTokenAddress, dc2daiSwapCallData);
+        uint256 aspanPrice = IPriceOracle(_priceOracle).getUSDCPriceOf(
+            address(this),
+            address(ASPANTOKEN),
+            [aaveATokenDaiAddress, aaveATokenUsdcAddress, aaveATokenUsdtAddress]
+        );
+        IERC20(usdcTokenAddress).transferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        ); //if the checks pass, transfer proceeds
+        fillQuote(
+            _amount / 3,
+            IERC20(usdcTokenAddress),
+            usdtTokenAddress,
+            dc2dtSwapCallData
+        );
+        fillQuote(
+            _amount / 3,
+            IERC20(usdcTokenAddress),
+            daiTokenAddress,
+            dc2daiSwapCallData
+        );
 
-        supplyToAave(_amount/3 * 995 / 1000, usdcTokenAddress);
-        supplyToAave(_amount/3 * 995 / 1000, usdtTokenAddress);
-        supplyToAave(_amount/3 * 995 / 1000, daiTokenAddress);
+        supplyToAave(((_amount / 3) * 995) / 1000, usdcTokenAddress);
+        supplyToAave(((_amount / 3) * 995) / 1000, usdtTokenAddress);
+        supplyToAave(((_amount / 3) * 995) / 1000, daiTokenAddress);
 
-        IAspanToken(ASPANTOKEN).mint(address(this), msg.sender, _amount/aspanPrice);
-        
-        emit Deposit(msg.sender, IAspanToken(ASPANTOKEN).balanceOf(msg.sender), _amount);
+        uint256 tokensMinted = _amount / aspanPrice;
+        IAspanToken(ASPANTOKEN).mint(address(this), msg.sender, tokensMinted);
+
+        emit Deposit(msg.sender, tokensMinted, _amount);
     }
 
-    function withdraw(uint256 aspanTokenAmount, bytes calldata dt2dcSwapCallData, bytes calldata dai2dcSwapCallData) external {
+    function withdraw(
+        uint256 aspanTokenAmount,
+        bytes calldata dt2dcSwapCallData,
+        bytes calldata dai2dcSwapCallData
+    ) external {
         require(IERC20(ASPANTOKEN).balanceOf(msg.sender) > aspanTokenAmount);
         IAspanToken(ASPANTOKEN).burn(msg.sender, msg.sender, aspanTokenAmount);
-        uint256 aspanPrice = IPriceOracle(_priceOracle).getUSDCPriceOf(address(this), address(ASPANTOKEN), [aaveATokenDaiAddress, aaveATokenUsdcAddress, aaveATokenUsdtAddress]);
-        uint256 usdcValue = aspanPrice * aspanTokenAmount / 1e18;
-        
-        withdrawFromAave(usdcValue/3, usdtTokenAddress);
-        withdrawFromAave(usdcValue/3, usdcTokenAddress);
-        withdrawFromAave(usdcValue/3, daiTokenAddress);
+        uint256 aspanPrice = IPriceOracle(_priceOracle).getUSDCPriceOf(
+            address(this),
+            address(ASPANTOKEN),
+            [aaveATokenDaiAddress, aaveATokenUsdcAddress, aaveATokenUsdtAddress]
+        );
+        uint256 usdcValue = (aspanPrice * aspanTokenAmount) / 1e18;
 
-        fillQuote(usdcValue/3, IERC20(usdtTokenAddress), usdcTokenAddress, dt2dcSwapCallData);
-        fillQuote(usdcValue/3, IERC20(daiTokenAddress), usdcTokenAddress, dai2dcSwapCallData);
+        withdrawFromAave(usdcValue / 3, usdtTokenAddress);
+        withdrawFromAave(usdcValue / 3, usdcTokenAddress);
+        withdrawFromAave(usdcValue / 3, daiTokenAddress);
 
-        IERC20(usdcTokenAddress).transfer(msg.sender, usdcValue * 995 / 1000); //taking a 0.5% cut also avoiding slippage
+        fillQuote(
+            usdcValue / 3,
+            IERC20(usdtTokenAddress),
+            usdcTokenAddress,
+            dt2dcSwapCallData
+        );
+        fillQuote(
+            usdcValue / 3,
+            IERC20(daiTokenAddress),
+            usdcTokenAddress,
+            dai2dcSwapCallData
+        );
+
+        IERC20(usdcTokenAddress).transfer(msg.sender, (usdcValue * 995) / 1000); //taking a 0.5% cut also avoiding slippage
         emit Withdraw(msg.sender, aspanTokenAmount, usdcValue);
     }
 
@@ -107,19 +154,25 @@ contract Vault is IVault {
     function withdrawFromAave(uint256 _amount, address tokenAddr) internal {
         address poolAddr = getPoolAddress();
         //function withdraw(address asset, uint256 amount, address to)
-        IPool(poolAddr).withdraw(tokenAddr, _amount, address(this)); 
+        IPool(poolAddr).withdraw(tokenAddr, _amount, address(this));
     }
 
-    function setAspanTokenAddress(IAspanToken newAspanToken) external onlyOwner{
+    function setAspanTokenAddress(IAspanToken newAspanToken)
+        external
+        onlyOwner
+    {
         ASPANTOKEN = newAspanToken;
     }
 
-    function setPriceOracle(IPriceOracle newPriceOracle) external onlyOwner{
+    function setPriceOracle(IPriceOracle newPriceOracle) external onlyOwner {
         _priceOracle = newPriceOracle;
     }
 
-    function rescueFund(address tokenAddress, address to) external onlyOwner{
-        IERC20(tokenAddress).transfer(to,IERC20(tokenAddress).balanceOf(address(this)));
+    function rescueFund(address tokenAddress, address to) external onlyOwner {
+        IERC20(tokenAddress).transfer(
+            to,
+            IERC20(tokenAddress).balanceOf(address(this))
+        );
     }
 
     //swap function
