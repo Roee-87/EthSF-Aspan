@@ -9,7 +9,7 @@ import {IInitializableAspanToken} from './IInitializableAspanToken.sol';
  * @author BuzzCai.eth
  * @notice Defines the basic interface for an AspanToken.
  **/
-interface IAspanToken is IERC20 {
+interface IAspanToken is IERC20, IInitializableAspanToken {
   /**
    * @dev Emitted during the transfer action
    * @param from The user whose tokens are being transferred
@@ -35,7 +35,6 @@ interface IAspanToken is IERC20 {
    * @param from The address from which the scaled tokens will be burned
    * @param target The address that will receive the underlying, if any
    * @param value The amount being burned (user entered amount - balance increase from interest)
-   * @param balanceIncrease The increase in balance since the last action of the user
    **/
   event Burn(
     address indexed from,

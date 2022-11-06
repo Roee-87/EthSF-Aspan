@@ -7,23 +7,25 @@ import {SafeCast} from '../dependencies/openzeppelin/contracts/SafeCast.sol';
 import {Errors} from '../dependencies/helpers/Errors.sol';
 import {WadRayMath} from '../dependencies/math/WadRayMath.sol';
 import {IPool} from './IPool.sol';
-import {AspanToken} from './IAspanToken.sol';
+import {IAspanToken} from './IAspanToken.sol';
 import {IInitializableAspanToken} from './IInitializableAspanToken.sol';
 import {EIP712Base} from '../dependencies/openzeppelin/contracts/EIP712Base.sol';
 import {ERC20} from '../dependencies/openzeppelin/contracts/ERC20.sol';
 import {IPoolAddressesProvider} from '../dependencies/openzeppelin/contracts/IPoolAddressesProvider.sol';
+import {IACLManager} from '../dependencies/openzeppelin/contracts/IACLManager.sol';
 
 contract AspanToken is IAspanToken, ERC20, EIP712Base {
     using WadRayMath for uint256;
     using SafeCast for uint256;
     using GPv2SafeERC20 for IERC20;
 
+    bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+
     /**
     * @dev Only pool admin can call functions marked by this modifier.
     **/
     modifier onlyPoolAdmin() {
-        IACLManager aclManager = IACLManager(_addressesProvider.getACLManager());
-        require(aclManager.isPoolAdmin(msg.sender), Errors.CALLER_NOT_POOL_ADMIN);
+        //require(_msgSender() == address(), Errors.CALLER_MUST_BE_POOL);
         _;
     }
 
@@ -38,11 +40,11 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
     address internal _treasury;
     address internal _underlyingAsset;
     uint256 internal _aspanPrice; // in USDC
-    IPoolAddressesProvider internal immutable _addressesProvider;
+    //IPoolAddressesProvider internal immutable _addressesProvider;
     IPool public immutable POOL;
     
     
-    ITokenPriceOracle internal oracle;
+    //ITokenPriceOracle internal oracle;
 
     /**
     * @dev Constructor.
@@ -52,7 +54,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         ERC20('AspanToken_IMPL', 'AspanToken_IMPL') 
         EIP712Base()
     {
-        _addressesProvider = pool.ADDRESSES_PROVIDER();
+        //_addressesProvider = pool.ADDRESSES_PROVIDER();
         POOL = pool;
     }
 
@@ -65,7 +67,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         string calldata AspanTokenName,
         string calldata AspanTokenSymbol,
         bytes calldata params
-    ) external override initializer {
+    ) external override {
         require(initializingPool == POOL, Errors.POOL_ADDRESSES_DO_NOT_MATCH);
         _setName(AspanTokenName);
         _setSymbol(AspanTokenSymbol);
@@ -80,7 +82,6 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         underlyingAsset,
         address(POOL),
         treasury,
-        address(incentivesController),
         AspanTokenDecimals,
         AspanTokenName,
         AspanTokenSymbol,
@@ -88,7 +89,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         );
     }
 
-    /// @inheritdoc AspanToken
+    /// @inheritdoc IAspanToken
     function mint(
         address caller,
         address onBehalfOf,
@@ -109,7 +110,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         return;
     }
 
-    /// @inheritdoc AspanToken
+    /// @inheritdoc IAspanToken
     function burn(
         address from,
         address receiverOfUnderlying,
@@ -131,7 +132,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         emit Burn(from, receiverOfUnderlying, amount);
     }
 
-    /// @inheritdoc AspanToken
+    /// @inheritdoc IAspanToken
     function mintToTreasury(uint256 amount) external override onlyPool {
         if (amount == 0) {
             return;
@@ -139,7 +140,7 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         _mintAspan(address(POOL), _treasury, amount);
     }
 
-    /// @inheritdoc AspanToken
+    /// @inheritdoc IAspanToken
     function transferOnLiquidation(
         address from,
         address to,
@@ -147,85 +148,28 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
     ) external override onlyPool {
         // Being a normal transfer, the Transfer() and BalanceTransfer() are emitted
         // so no need to emit a specific event here
-        _transfer(from, to, value, false);
-
-        emit Transfer(from, to, value);
+        _transfer(from, to, value);
+        
     }
 
-    /// @inheritdoc AspanToken
+    /// @inheritdoc IAspanToken
     function RESERVE_TREASURY_ADDRESS() external view override returns (address) {
         return _treasury;
     }
 
-    /// @inheritdoc AspanToken
+    /// @inheritdoc IAspanToken
     function UNDERLYING_ASSET_ADDRESS() external view override returns (address) {
         return _underlyingAsset;
     }
 
-    /// @inheritdoc AspanToken
+    /// @inheritdoc IAspanToken
     function transferUnderlyingTo(address target, uint256 amount) external virtual override onlyPool {
         IERC20(_underlyingAsset).safeTransfer(target, amount);
     }
 
-    /// @inheritdoc AspanToken
+    /// @inheritdoc IAspanToken
     function handleRepayment(address user, uint256 amount) external virtual override onlyPool {
         // Intentionally left blank
-    }
-
-    /// @inheritdoc AspanToken
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external override {
-        require(owner != address(0), Errors.ZERO_ADDRESS_NOT_VALID);
-        //solium-disable-next-line
-        require(block.timestamp <= deadline, Errors.INVALID_EXPIRATION);
-        uint256 currentValidNonce = _nonces[owner];
-        bytes32 digest = keccak256(
-        abi.encodePacked(
-            '\x19\x01',
-            DOMAIN_SEPARATOR(),
-            keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, currentValidNonce, deadline))
-        )
-        );
-        require(owner == ecrecover(digest, v, r, s), Errors.INVALID_SIGNATURE);
-        _nonces[owner] = currentValidNonce + 1;
-        _approve(owner, spender, value);
-    }
-
-    /**
-    * @notice Transfers the AspanTokens between two users. Validates the transfer
-    * (ie checks for valid HF after the transfer) if required
-    * @param from The source address
-    * @param to The destination address
-    * @param amount The amount getting transferred
-    * @param validate True if the transfer needs to be validated, false otherwise
-    **/
-    function _transfer(
-        address from,
-        address to,
-        uint256 amount,
-        bool validate
-    ) internal {
-        address underlyingAsset = _underlyingAsset;
-
-        uint256 index = POOL.getReserveNormalizedIncome(underlyingAsset);
-
-        uint256 fromBalanceBefore = super.balanceOf(from).rayMul(index);
-        uint256 toBalanceBefore = super.balanceOf(to).rayMul(index);
-
-        super._transfer(from, to, amount.rayDiv(index).toUint128());
-
-        if (validate) {
-        POOL.finalizeTransfer(underlyingAsset, from, to, amount, fromBalanceBefore, toBalanceBefore);
-        }
-
-        emit BalanceTransfer(from, to, amount, index);
     }
 
     /**
@@ -237,16 +181,24 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
     function _transfer(
         address from,
         address to,
-        uint128 amount
+        uint256 amount
     ) internal override {
-        _transfer(from, to, amount, true);
+        revert();
+    }
+
+    /**
+   * @dev Overrides the base function to fully implement IAToken
+   * @dev see `IncentivizedERC20.DOMAIN_SEPARATOR()` for more detailed documentation
+   */
+    function DOMAIN_SEPARATOR() public view override(IAspanToken, EIP712Base) returns (bytes32) {
+        return super.DOMAIN_SEPARATOR();
     }
 
     /**
     * @dev Overrides the base function to fully implement AspanToken
     * @dev see `IncentivizedERC20.nonces()` for more detailed documentation
     */
-    function nonces(address owner) public view override(AspanToken, EIP712Base) returns (uint256) {
+    function nonces(address owner) public view override(IAspanToken, EIP712Base) returns (uint256) {
         return super.nonces(owner);
     }
 
@@ -255,7 +207,6 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         return name();
     }
 
-    /// @inheritdoc AspanToken
     function rescueTokens(
         address token,
         address to,
@@ -264,32 +215,4 @@ contract AspanToken is IAspanToken, ERC20, EIP712Base {
         require(token != _underlyingAsset, Errors.UNDERLYING_CANNOT_BE_RESCUED);
         IERC20(token).safeTransfer(to, amount);
     }
-
-    /*constructor(address oracleAddress) ERC20("ASPAN", "ARP") {
-        oracle = ITokenPriceOracle(oracleAddress);
-    }
-
-
-    function mintIndexTokens(address depositer, uint256 totalUSDC)
-        external
-        onlyOwner
-    {
-        tokenPrice = oracle.getIndexPrice();
-        aspanTokenAmountMint = totalUSDC / tokenPrice;
-        _mint(depositer, aspanTokenAmountMint);
-    }
-
-    function burnIndexTokens(address withdrawer, uint256 totalUSDC)
-        external
-        onlyOwner
-    {
-        tokenPrice = oracle.getIndexPrice();
-        aspanTokenAmountBurn = totalUSDC / tokenPrice;
-        _burn(withdrawer, aspanTokenAmountBurn);
-    }
-
-    //This allows us to designate our Vault contract as the "owner" that has sole authority to mint and burn index tokens
-    function setNewOwner(address _newOwner) external onlyOwner {
-        owner = _newOwner;
-    }*/
 }

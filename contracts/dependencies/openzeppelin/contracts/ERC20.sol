@@ -341,4 +341,28 @@ contract ERC20 is Context, IERC20 {
     address to,
     uint256 amount
   ) internal virtual {}
+
+  /**
+   * @notice Update the name of the token
+   * @param newName The new name for the token
+   */
+  function _setName(string memory newName) internal {
+    _name = newName;
+  }
+
+  /**
+   * @notice Update the symbol for the token
+   * @param newSymbol The new symbol for the token
+   */
+  function _setSymbol(string memory newSymbol) internal {
+    _symbol = newSymbol;
+  }
+
+  /**
+   * @notice Update the number of decimals for the token
+   * @param newDecimals The new number of decimals for the token
+   */
+  function _setDecimals(uint8 newDecimals) internal {
+    _decimals = newDecimals;
+  }
 }
