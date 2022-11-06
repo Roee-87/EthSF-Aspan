@@ -6,7 +6,7 @@ import {GPv2SafeERC20} from '../dependencies/gnosis/contracts/GPv2SafeERC20.sol'
 import {SafeCast} from '../dependencies/openzeppelin/contracts/SafeCast.sol';
 import {Errors} from '../dependencies/helpers/Errors.sol';
 import {WadRayMath} from '../dependencies/math/WadRayMath.sol';
-import {IVault} from './IVault.sol';
+import {IVault} from '../IVault.sol';
 import {IAspanToken} from './IAspanToken.sol';
 import {IInitializableAspanToken} from './IInitializableAspanToken.sol';
 import {EIP712Base} from '../dependencies/openzeppelin/contracts/EIP712Base.sol';

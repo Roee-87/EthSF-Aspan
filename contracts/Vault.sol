@@ -6,6 +6,7 @@ import {IPoolAddressesProvider} from "../contracts/dependencies/openzeppelin/con
 import {IERC20} from "../contracts/dependencies/openzeppelin/contracts/IERC20.sol";
 import {IAspanToken} from "../contracts/tokenization/IAspanToken.sol";
 import {IPriceOracle} from "../contracts/oracle/IPriceOracle.sol";
+import {IVault} from "./IVault.sol";
 
 //import {IOracle}
 //import {IAspanToken}
@@ -15,12 +16,11 @@ import {IPriceOracle} from "../contracts/oracle/IPriceOracle.sol";
 /// @author Roy Rotstein, etc
 /// @notice the vault contracts accepts user funds and deploys Aspan's investing strategy
 /// @dev users can call three functions:  deposit(), withdraw(), checkMyBalance();
-contract Vault {
+contract Vault is IVault {
     address private _owner;
     //IStrategy currentStrategy;
 
-    event Deposit(address user, uint256 aspanBalance, uint256 usdcDeposited);
-    event Withdraw(address user, uint256 aspanBurned, uint256 usdcWithdrew); //amount deposited, AspanToken minted)
+    
     //@dev List of token addresses and corresponding Aave ATokens that we use in this strategy
     address private constant usdcTokenAddress =
         0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
@@ -72,6 +72,7 @@ contract Vault {
         supplyToAave(_amount/3, usdcTokenAddress);
         supplyToAave(_amount/3, usdtTokenAddress);
         supplyToAave(_amount/3, daiTokenAddress);
+
         IAspanToken(ASPANTOKEN).mint(address(this), msg.sender, _amount/aspanPrice);
         
         emit Deposit(msg.sender, IAspanToken(ASPANTOKEN).balanceOf(msg.sender), _amount);
@@ -86,8 +87,10 @@ contract Vault {
         withdrawFromAave(usdcValue/3, usdtTokenAddress);
         withdrawFromAave(usdcValue/3, usdcTokenAddress);
         withdrawFromAave(usdcValue/3, daiTokenAddress);
+        
         fillQuote(usdcValue/3, IERC20(usdtTokenAddress), usdcTokenAddress, dt2dcSwapCallData);
         fillQuote(usdcValue/3, IERC20(daiTokenAddress), usdcTokenAddress, dai2dcSwapCallData);
+
         IERC20(usdcTokenAddress).transfer(msg.sender, usdcValue);
         emit Withdraw(msg.sender, aspanTokenAmount, usdcValue);
     }

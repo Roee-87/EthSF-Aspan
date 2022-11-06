@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import {IVault} from './IVault.sol';
+import {IVault} from '../IVault.sol';
 
 /**
  * @title IInitializableAspanToken
