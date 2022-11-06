@@ -5,3 +5,5 @@ Whereas a majority of today's dapps attempt to improve usability for the same ol
 0x:  When making a deposit, users are prompted to deposit USDC funds into the Vault contract.  In order to reduce risk exposure to any one stablecoin, we use 0x swap api to convert a portion of the user's USDC deposit into DAI and USDT tokens.  The three stablecoins are then supplied to Aave lending pools and interest is earned by the Vault contract on behalf of the users. The partition ratio of the various stablecoins will be updated by the ASPAN team in order to optimize risk exposure and acceptable APY.  When a user wishes to withdraw funds, the DAI and USDT portion of the user's funds are converted back to USDC and subsequently returned to the user.  0x swap endpiont allows us to access the most competitive quotes with minimal slippage to the user.
 
 The Graph:  We are using The Graph to index our userbase and ensure our committment to transparent cashflows. 
+
+Aspan Token: Aspan Token acts as the deposit receipt for users to reclaim assets and interests. It is controlled by the Vault to mint new tokens and burn tokens to redeem assets. 
