@@ -35,9 +35,9 @@ contract Vault is IVault {
         0x6ab707Aca953eDAeFBc4fD23bA73294241490620;
 
     address private poolProviderAddress =
-        0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb; //polygon POS
+        0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb; //Polygon POS
 
-    address polygonProxyAddr = 0xDef1C0ded9bec7F1a1670819833240f027b25EfF; //mumbai 0x proxy address
+    address polygonProxyAddr = 0xDef1C0ded9bec7F1a1670819833240f027b25EfF; //Polygon 0x proxy address
 
     IAspanToken public ASPANTOKEN;
     IPriceOracle private _priceOracle;
